@@ -4,3 +4,7 @@
 gradleにエラー"
 
 <a href="https://imgur.com/pQFZGjx"><img src="https://i.imgur.com/pQFZGjx.jpg" title="source: imgur.com" width="700" height="500" /></a>
+
+# 3/4
+- カメラ機能を作った
+→カメラが起動しない

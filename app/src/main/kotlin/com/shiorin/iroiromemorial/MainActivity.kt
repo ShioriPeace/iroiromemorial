@@ -12,10 +12,12 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.provider.MediaStore
+import android.util.Log
 import android.util.Size
 import android.view.Surface
 import android.view.TextureView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
@@ -34,26 +36,31 @@ class MainActivity : AppCompatActivity() {
     private lateinit var previewRequest : CaptureRequest
     private lateinit var captureSession : CameraCaptureSession
     private var backgroundThread : HandlerThread? = null
+    private var backgroundHandler : Handler? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         textureView = findViewById(R.id.cameraView)
         textureView.surfaceTextureListener = surfaceTextureListener
+        startBackgroundThread()
 
     }
 
+
+
     private fun openCamera() {
-        var manager: CameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val manager: CameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {
             //端末のどのカメラを使うか
-            var cameraId: String = manager.cameraIdList[0]
-            var permission = ContextCompat.checkSelfPermission(this,android.Manifest.permission.CAMERA)
+            val cameraId: String = manager.cameraIdList[0]
+            val permission = ContextCompat.checkSelfPermission(this,android.Manifest.permission.CAMERA)
 
             if(permission != PackageManager.PERMISSION_GRANTED){
                 requestCameraPermission()
                 return
             }
+            //カメラ起動
             manager.openCamera(cameraId,stateCallback,null)
         } catch (e:Exception){
             e.printStackTrace()
@@ -69,7 +76,7 @@ class MainActivity : AppCompatActivity() {
 
         //カメラ切断
         override fun onDisconnected(camera: CameraDevice) {
-            cameraDevice?.close()
+            camera.close()
             this@MainActivity.cameraDevice = null
         }
 
@@ -87,6 +94,7 @@ class MainActivity : AppCompatActivity() {
             texture.setDefaultBufferSize(previewSize.width,previewSize.height)
             val surface = Surface(texture)
             previewRequestBuilder = cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+            previewRequestBuilder.addTarget(surface)
             cameraDevice?.createCaptureSession(Arrays.asList(surface,imageReader?.surface),
                 object : CameraCaptureSession.StateCallback(){
                     override fun onConfigured(session: CameraCaptureSession) {
@@ -97,6 +105,7 @@ class MainActivity : AppCompatActivity() {
                             previewRequest = previewRequestBuilder.build()
                             captureSession.setRepeatingRequest(previewRequest,null,Handler(backgroundThread?.looper))
                         }catch (e:CameraAccessException){
+                            Log.e("erfs", e.toString())
 
                         }
 
@@ -108,17 +117,32 @@ class MainActivity : AppCompatActivity() {
 
                 },null)
         }catch (e:CameraAccessException){
+            Log.e("erfs", e.toString())
 
         }
 
     }
 
-
+    //カメラ利用許可のダイヤログを表示
     private fun requestCameraPermission() {
+        if(shouldShowRequestPermissionRationale(android.Manifest.permission.CAMERA)){
+            AlertDialog.Builder(baseContext)
+                    .setMessage("Permission Check")
+                    .setPositiveButton(android.R.string.ok){_, _ -> //dialog,which
+                        requestPermissions(arrayOf(android.Manifest.permission.CAMERA),200)
+                    }
+                    .setNegativeButton(android.R.string.cancel){_,_ ->
+                        finish()
+                    }
+        }else{
+            requestPermissions(arrayOf(android.Manifest.permission.CAMERA),200)
+
+        }
 
     }
 
     private val surfaceTextureListener = object : TextureView.SurfaceTextureListener{
+        //TextureViewが有効になった
         override fun onSurfaceTextureAvailable(surface: SurfaceTexture?, width: Int, height: Int) {
             imageReader = ImageReader.newInstance(width,height,ImageFormat.JPEG,2)
 
@@ -136,6 +160,12 @@ class MainActivity : AppCompatActivity() {
         override fun onSurfaceTextureDestroyed(surface: SurfaceTexture?): Boolean {
             return false
         }
+    }
+
+    private fun startBackgroundThread() {
+        backgroundThread = HandlerThread("CameraBackground").also { it.start() }
+        backgroundHandler = Handler(backgroundThread?.looper)
+
     }
 
 

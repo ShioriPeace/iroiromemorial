@@ -22,14 +22,21 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import kotlinx.android.synthetic.main.activity_main.*
+import java.lang.ref.WeakReference
 import java.util.*
 import java.util.jar.Manifest
 
 class MainActivity : AppCompatActivity() {
+    companion object {
+        const val PERMISSION_WRITE_STORAGE = 1000
+        const val PERMISSION_READ_STORAGE = 1001
+    }
+
     private lateinit var textureView: TextureView
     private  var imageReader: ImageReader? = null
     private var cameraDevice: CameraDevice? = null
     private val previewSize: Size = Size(300,300)//カメラサイズ変更かもその２
+
 
 
     private lateinit var previewRequestBuilder : CaptureRequest.Builder
@@ -44,6 +51,13 @@ class MainActivity : AppCompatActivity() {
         textureView = findViewById(R.id.cameraView)
         textureView.surfaceTextureListener = surfaceTextureListener
         startBackgroundThread()
+
+        val writePermission = ContextCompat.checkSelfPermission(this,android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        val readPermission = ContextCompat.checkSelfPermission(this,android.Manifest.permission.READ_EXTERNAL_STORAGE)
+
+        if ((writePermission != PackageManager.PERMISSION_GRANTED) || (readPermission != PackageManager.PERMISSION_GRANTED)){
+            requestStoragePermission()
+        }
 
     }
 
@@ -67,6 +81,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    //カメラを起動する時に接続できているかを確認するCallback
     private val stateCallback = object : CameraDevice.StateCallback(){
         //カメラ接続完了
         override fun onOpened(camera: CameraDevice) {
@@ -95,6 +110,8 @@ class MainActivity : AppCompatActivity() {
             val surface = Surface(texture)
             previewRequestBuilder = cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
             previewRequestBuilder.addTarget(surface)
+
+            //カメラのデータをTextureViewにプレビューしている
             cameraDevice?.createCaptureSession(Arrays.asList(surface,imageReader?.surface),
                 object : CameraCaptureSession.StateCallback(){
                     override fun onConfigured(session: CameraCaptureSession) {
@@ -168,6 +185,38 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    private fun requestStoragePermission() {
+        //書き込み
+        if(shouldShowRequestPermissionRationale(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)){
+            AlertDialog.Builder(baseContext)
+                    .setMessage("Permission Check")
+                    .setPositiveButton(android.R.string.ok){ _, _ ->
+                        requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), PERMISSION_WRITE_STORAGE)
+                    }
+                    .setNegativeButton(android.R.string.cancel){ _, _ ->
+                        finish()
+                    }
+                    .create()
+        }else{
+            requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), PERMISSION_WRITE_STORAGE)
+        }
+
+        //読み込み
+        if(shouldShowRequestPermissionRationale(android.Manifest.permission.READ_EXTERNAL_STORAGE)){
+            AlertDialog.Builder(baseContext)
+                    .setMessage("Permission Check")
+                    .setPositiveButton(android.R.string.ok){ _, _ ->
+                        requestPermissions(arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE), PERMISSION_READ_STORAGE)
+                    }
+                    .setNegativeButton(android.R.string.cancel){ _, _ ->
+                        finish()
+                    }
+                    .create()
+        }else{
+            requestPermissions(arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE), PERMISSION_READ_STORAGE)
+        }
+
+    }
 
 
 }

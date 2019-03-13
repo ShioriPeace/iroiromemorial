@@ -3,6 +3,7 @@ package com.shiorin.iroiromemorial
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
@@ -14,6 +15,7 @@ import android.os.HandlerThread
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
+import android.view.MotionEvent
 import android.view.Surface
 import android.view.TextureView
 import android.widget.Toast
@@ -22,6 +24,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import kotlinx.android.synthetic.main.activity_main.*
+import java.io.*
 import java.lang.ref.WeakReference
 import java.util.*
 import java.util.jar.Manifest
@@ -216,6 +219,10 @@ class MainActivity : AppCompatActivity() {
             requestPermissions(arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE), PERMISSION_READ_STORAGE)
         }
 
+    }
+
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        return super.onTouchEvent(event)
     }
 
 

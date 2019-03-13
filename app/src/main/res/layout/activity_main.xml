@@ -7,19 +7,20 @@
         android:layout_height="match_parent"
         tools:context=".MainActivity">
 
-    <FrameLayout
+    <LinearLayout
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            xmlns:android="http://schemas.android.com/apk/res/android"
-            tools:ignore="MissingConstraints">
+        tools:ignore="MissingConstraints">
 
         <TextureView
                 android:id="@+id/cameraView"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="400dp"
                 tools:ignore="MissingConstraints"/>
 
-    </FrameLayout>
+        <include layout="@layout/view_canvas"/>
+    </LinearLayout>
+
 
 
 
